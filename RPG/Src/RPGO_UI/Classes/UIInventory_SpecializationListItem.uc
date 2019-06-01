@@ -19,12 +19,16 @@ simulated function UIPanel InitPanel(optional name InitName, optional name InitL
 simulated function RealizeSpecializationsIcons()
 {
 	local array<X2AbilityTemplate> Templates;
-	
+	local UIPanel Dummy;
 	Templates = GetSpecializationAbilities();
 
 	ConfirmButton.SetY(InitPosY);
-
-	AbilityIconRow = Spawn(class'UIAbilityIconRow', self);
+	// We need a non-navigable "fire wall" between the list item and the icon row...
+	Dummy = Spawn(class'UIPanel', self);
+	Dummy.bIsNavigable = false;
+	Dummy.bAnimateOnInit = false;
+	Dummy.InitPanel();
+	AbilityIconRow = Spawn(class'UIAbilityIconRow', Dummy);
 	AbilityIconRow.InitAbilityIconRowPanel('SpecIconRow',, IconSize, Templates);
 	AbilityIconRow.SetPosition(InitPosX, InitPosY);
 }
@@ -47,6 +51,19 @@ simulated function array<X2AbilityTemplate> GetSpecializationAbilities()
 
 	EmptyList.Length = 0;
 	return EmptyList;
+}
+
+simulated function OnLoseFocus()
+{
+	super.OnLoseFocus();
+	AbilityIconRow.OnLoseFocus();
+	AbilityIconRow.Navigator.SelectedIndex = INDEX_NONE;
+}
+
+simulated function bool OnUnrealCommand(int cmd, int arg)
+{
+	`log("we got called?");
+	return AbilityIconRow.Navigator.OnUnrealCommand(cmd, arg) || Super.OnUnrealCommand(cmd, arg);
 }
 
 defaultproperties
